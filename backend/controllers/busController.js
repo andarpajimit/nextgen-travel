@@ -1,3 +1,5 @@
+//What this does: Admin can Add, View, Update, Delete buses
+
 const pool = require('../config/database');
 
 // GET all buses
