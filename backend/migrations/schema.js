@@ -3,9 +3,9 @@ const bcrypt = require('bcryptjs');
 
 const createTables = async () => {
   const client = await pool.connect();
-
+// Start transaction (all or nothing)
   try {
-    await client.query('BEGIN'); // Start transaction (all or nothing)
+    await client.query('BEGIN'); 
 
     // ── TABLE 1: users ────────
     await client.query(`
@@ -83,20 +83,20 @@ const createTables = async () => {
     // Default admin account ────
     const adminPassword = await bcrypt.hash('Admin@123', 10);
     await client.query(`
-      INSERT INTO users (name, email, password, role)
-      VALUES ('Admin', 'admin@nextgentravel.com', $1, 'admin')
+      INSERT INTO users (name, email, password, role,phone)
+      VALUES ('Admin', 'admin@nextgentravel.com', $1, 'admin','9579033206')
       ON CONFLICT (email) DO NOTHING;
     `, [adminPassword]);
 
     // Sample routes ────
     await client.query(`
       INSERT INTO routes (from_city, to_city, distance_km) VALUES
-        ('Mumbai', 'Pune', 1199),
-        ('Mumbai', 'Goa', 2699),
-        ('Mumbai', 'Ahmedabad', 2399),
-        ('Pune', 'Goa', 2699),
-        ('Delhi', 'Jaipur', 3399),
-        ('Bangalore', 'Chennai', 3999)
+        ('Mumbai', 'Pune', 400),
+        ('Mumbai', 'Goa', 900),
+        ('Mumbai', 'Ahmedabad', 700),
+        ('Pune', 'Goa', 600),
+        ('Delhi', 'Jaipur', 1200),
+        ('Bangalore', 'Chennai', 550)
       ON CONFLICT DO NOTHING;
     `);
 
@@ -112,11 +112,19 @@ const createTables = async () => {
     `);
 
     //Sample schedules for next 7 days ─────
-    for (let i = 0; i < 7; i++) {  // Loop that will run 7 times (i = 0 to i = 6)
-        const d = new Date();         // Create a new Date object representing the current date and time
-        d.setDate(d.getDate() + i);   // Add i days to the current date (i will range from 0 to 6)
-        const dateStr = d.toISOString().split('T')[0];  // Format the date as 'YYYY-MM-DD' string
+    /*
+        // Loop that will run 7 times (i = 0 to i = 6)
+        //Create a new Date object representing the current date and time
+        //Add i days to the current date (i will range from 0 to 6)
+        //Format the date as 'YYYY-MM-DD' string
+        
+    */
+    for (let i = 0; i < 7; i++) {  
+        const d = new Date();        
+        d.setDate(d.getDate() + i);   
+        const dateStr = d.toISOString().split('T')[0]; 
       
+        //INSERT INTO schedules
         await client.query(`
           INSERT INTO schedules
             (route_id, bus_id, departure_time, arrival_time, travel_date, price, available_seats)
@@ -127,16 +135,18 @@ const createTables = async () => {
             (2, 1, '07:00', '19:00', $1, 1200.00, 40),
             (2, 2, '20:00', '08:00', $1, 1400.00, 36),
             (5, 3, '08:00', '13:00', $1, 600.00, 45)
-          ON CONFLICT DO NOTHING;   // Avoid inserting duplicate schedules
-        `, [dateStr]);              // Pass the formatted date (travel_date) for each day as $1
-      }
+          ON CONFLICT DO NOTHING;
+        `, [dateStr]);             
+}
+// Pass the formatted date (travel_date) for each day as $1
 
-    await client.query('COMMIT'); // Save everything
+
+    await client.query('COMMIT'); 
     console.log('✅ Tables created + sample data inserted!');
     console.log('🔑 Admin: admin@nextgentravel.com | Admin@123');
 
   } catch (err) {
-    await client.query('ROLLBACK'); // Undo if error
+    await client.query('ROLLBACK'); 
     console.error('❌ Migration error:', err.message);
     throw err;
   } finally {
