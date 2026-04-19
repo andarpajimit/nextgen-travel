@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext();
@@ -7,6 +7,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await axios.get('/api/auth/me');
+      setUser(res.data.data);
+    } catch {
+      logout();
+    } finally {
+      setLoading(false);
+    }
+  }, []); // fetchUser memoized, no dependencies
 
   // Set axios default header when token changes
   useEffect(() => {
@@ -17,18 +28,7 @@ export const AuthProvider = ({ children }) => {
       delete axios.defaults.headers.common['Authorization'];
       setLoading(false);
     }
-  }, [token]);
-
-  const fetchUser = async () => {
-    try {
-      const res = await axios.get('/api/auth/me');
-      setUser(res.data.data);
-    } catch {
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [token, fetchUser]); // include fetchUser safely
 
   const login = (userData, userToken) => {
     setUser(userData);
