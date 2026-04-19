@@ -8,6 +8,13 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
+  // Memoize logout so fetchUser can safely use it
+  const logout = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
+  }, []);
+
   const fetchUser = useCallback(async () => {
     try {
       const res = await axios.get('/api/auth/me');
@@ -17,9 +24,8 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []); // fetchUser memoized, no dependencies
+  }, [logout]); // include logout safely
 
-  // Set axios default header when token changes
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -28,18 +34,12 @@ export const AuthProvider = ({ children }) => {
       delete axios.defaults.headers.common['Authorization'];
       setLoading(false);
     }
-  }, [token, fetchUser]); // include fetchUser safely
+  }, [token, fetchUser]); // include fetchUser
 
   const login = (userData, userToken) => {
     setUser(userData);
     setToken(userToken);
     localStorage.setItem('token', userToken);
-  };
-
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
   };
 
   return (
