@@ -8,20 +8,17 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-
-  // 🔴 REQUIRED for Supabase
+    //🔴 REQUIRED for Supabase
   ssl: {
     rejectUnauthorized: false,
   },
-
-  //  FORCE IPv4 (FIX)
+   //  FORCE IPv4 (FIX)
   family: 4,
 });
-// Test connection
-pool.connect()
+
+// ✅ safer test
+pool.query('SELECT 1')
   .then(() => console.log('✅ Connected to Supabase PostgreSQL!'))
-  .catch((err) => {
-  console.error('❌ DB Connection Error:', err.message);
-});
+  .catch(err => console.error('❌ DB Connection Error:', err.message));
 
 module.exports = pool;
