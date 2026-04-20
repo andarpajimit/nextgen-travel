@@ -1,24 +1,24 @@
-// connect app to supabase database
+// database.js - production setup
 
 const { Pool } = require('pg');
 
+// Ensure env is present (fail fast)
+if (!process.env.DATABASE_URL) {
+  throw new Error('❌ DATABASE_URL is not defined');
+}
+
+// Create pool
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-    //🔴 REQUIRED for Supabase
+  connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false,
+    rejectUnauthorized: false, // required for Supabase
   },
-   //  FORCE IPv4 (FIX)
-  family: 4,
 });
 
-// ✅ safer test
-pool.query('SELECT 1')
-  .then(() => console.log('✅ Connected to Supabase PostgreSQL!'))
-  .catch(err => console.error('❌ DB Connection Error:', err.message));
+// Handle unexpected errors (important in production)
+pool.on('error', (err) => {
+  console.error('❌ Unexpected DB error:', err.message);
+  process.exit(1);
+});
 
 module.exports = pool;
