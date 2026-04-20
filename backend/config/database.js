@@ -13,8 +13,10 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
-});
 
+  //  FORCE IPv4 (FIX)
+  family: 4,
+});
 // Test connection
 pool.connect()
   .then(() => console.log('✅ Connected to Supabase PostgreSQL!'))
