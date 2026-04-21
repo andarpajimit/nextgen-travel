@@ -1,24 +1,27 @@
 // database.js - production setup
 
 const { Pool } = require('pg');
+require('dotenv').config();
 
-// Ensure env is present (fail fast)
-if (!process.env.DATABASE_URL) {
-  throw new Error('❌ DATABASE_URL is not defined');
-}
+const pool = new Pool(
+  process.env.DATABASE_URL
+    ? {
+        // ✅ Supabase / Render — use connection string
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+      }
+    : {
+        // ✅ Local development
+        host:     process.env.DB_HOST     || 'localhost',
+        port:     process.env.DB_PORT     || 5432,
+        database: process.env.DB_NAME     || 'nextgen_travel',
+        user:     process.env.DB_USER     || 'postgres',
+        password: process.env.DB_PASSWORD || '0264',
+        ssl:      false,
+      }
+);
 
-// Create pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // required for Supabase
-  },
-});
-
-// Handle unexpected errors (important in production)
-pool.on('error', (err) => {
-  console.error('❌ Unexpected DB error:', err.message);
-  process.exit(1);
-});
+pool.on('connect', () => console.log('✅ Connected to Supabase PostgreSQL!'));
+pool.on('error',   (err) => console.error('❌ DB Error:', err.message));
 
 module.exports = pool;
