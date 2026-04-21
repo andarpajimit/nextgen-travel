@@ -8,10 +8,13 @@ const HomePage = () => {
   const [form, setForm] = useState({ from: '', to: '', date: '' });
 
   useEffect(() => {
-    axios.get('/api/routes/cities')
-      .then(res => setCities(res.data.data))
-      .catch(() => {});
-  }, []);
+  axios.get('/api/routes/cities', { timeout: 10000 })
+    .then(res => setCities(res.data?.data || []))
+    .catch(err => {
+      console.error(err);
+      setCities([]);
+    });
+}, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -79,7 +82,9 @@ const HomePage = () => {
                 <span style={{ ...styles.dot, background: '#00c14a' }} />
                 <select style={styles.sfSelect} value={form.from} onChange={e => setForm({ ...form, from: e.target.value })}>
                   <option value="">Select start location</option>
-                  {cities.map(c => <option key={c} value={c}>{c}</option>)}
+                  {cities?.map((c, i) => (
+  <option key={i} value={c}>{c}</option>
+))}
                 </select>
               </div>
             </div>
@@ -89,7 +94,9 @@ const HomePage = () => {
                 <span style={{ ...styles.dot, background: '#e04040' }} />
                 <select style={styles.sfSelect} value={form.to} onChange={e => setForm({ ...form, to: e.target.value })}>
                   <option value="">Select destination</option>
-                  {cities.map(c => <option key={c} value={c}>{c}</option>)}
+                  {cities?.map((c, i) => (
+  <option key={i} value={c}>{c}</option>
+))}
                 </select>
               </div>
             </div>
