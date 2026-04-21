@@ -66,7 +66,7 @@ const LoginPage = () => {
         </p>
 
         <div style={styles.adminHint}>
-          🔑 Admin: admin@nextgentravel.com / Admin@123
+          👨🏻‍💼 Admin : andarpajimit@gmail.com
         </div>
       </div>
     </div>
