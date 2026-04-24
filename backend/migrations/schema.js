@@ -7,7 +7,7 @@ const createTables = async () => {
   try {
     await client.query('BEGIN');
 
-    // USERS
+    // ── USERS ─────────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -20,7 +20,7 @@ const createTables = async () => {
       );
     `);
 
-    // ROUTES
+    // ── ROUTES ────────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS routes (
         id SERIAL PRIMARY KEY,
@@ -31,7 +31,7 @@ const createTables = async () => {
       );
     `);
 
-    // BUSES
+    // ── BUSES ─────────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS buses (
         id SERIAL PRIMARY KEY,
@@ -44,7 +44,7 @@ const createTables = async () => {
       );
     `);
 
-    // SCHEDULES
+    // ── SCHEDULES ─────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS schedules (
         id SERIAL PRIMARY KEY,
@@ -60,7 +60,7 @@ const createTables = async () => {
       );
     `);
 
-    // BOOKINGS
+    // ── BOOKINGS ──────────────────────
     await client.query(`
       CREATE TABLE IF NOT EXISTS bookings (
         id SERIAL PRIMARY KEY,
@@ -80,7 +80,7 @@ const createTables = async () => {
       );
     `);
 
-    // ✅ Only Admin (keep this)
+    // ── ADMIN USER ────────────────────
     const adminPassword = await bcrypt.hash('Admin@123', 10);
     await client.query(`
       INSERT INTO users (name, email, password, role, phone)
@@ -88,8 +88,41 @@ const createTables = async () => {
       ON CONFLICT (email) DO NOTHING;
     `, [adminPassword]);
 
+    // ── AUTO GENERATE SCHEDULES (7 DAYS) ─────────────
+    // Copy today's schedules into next 7 days dynamically
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+
+      await client.query(`
+        INSERT INTO schedules (
+          route_id,
+          bus_id,
+          departure_time,
+          arrival_time,
+          travel_date,
+          price,
+          available_seats
+        )
+        SELECT
+          s.route_id,
+          s.bus_id,
+          s.departure_time,
+          s.arrival_time,
+          $1,
+          s.price,
+          b.total_seats
+        FROM schedules s
+        JOIN buses b ON b.id = s.bus_id
+        WHERE s.travel_date = CURRENT_DATE
+        ON CONFLICT DO NOTHING;
+      `, [dateStr]);
+    }
+
     await client.query('COMMIT');
-    console.log('✅ Tables created (Production Ready)');
+    console.log('✅ Tables created + dynamic schedules ready');
+    console.log('🔑 Admin: admin@nextgentravel.com | Admin@123');
 
   } catch (err) {
     await client.query('ROLLBACK');
