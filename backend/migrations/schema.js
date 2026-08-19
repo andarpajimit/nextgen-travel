@@ -88,12 +88,34 @@ const createTables = async () => {
       ON CONFLICT (email) DO NOTHING;
     `, [adminPassword]);
 
-    // ── AUTO GENERATE SCHEDULES (30 DAYS) ─────────────
-    // Copy today's schedules into next 30 days dynamically
-    for (let i = 1; i <= 30; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
+   // ── AUTO GENERATE SCHEDULES FOR NEXT 30 DAYS ─────────────
+
+const templateResult = await client.query(`
+  SELECT
+    route_id,
+    bus_id,
+    departure_time,
+    arrival_time,
+    price
+  FROM schedules
+  WHERE travel_date >= CURRENT_DATE
+  ORDER BY travel_date ASC
+`);
+
+const templates = templateResult.rows;
+
+if (templates.length === 0) {
+  console.log('⚠️ No existing schedules found to use as templates.');
+} else {
+
+  for (let i = 1; i <= 30; i++) {
+
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+
+    const dateStr = d.toISOString().split('T')[0];
+
+    for (const schedule of templates) {
 
       await client.query(`
         INSERT INTO schedules (
@@ -103,22 +125,34 @@ const createTables = async () => {
           arrival_time,
           travel_date,
           price,
-          available_seats
+          available_seats,
+          status
         )
         SELECT
-          s.route_id,
-          s.bus_id,
-          s.departure_time,
-          s.arrival_time,
           $1,
-          s.price,
-          b.total_seats
-        FROM schedules s
-        JOIN buses b ON b.id = s.bus_id
-        WHERE s.travel_date = CURRENT_DATE
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          b.total_seats,
+          'active'
+        FROM buses b
+        WHERE b.id = $2
         ON CONFLICT DO NOTHING;
-      `, [dateStr]);
+      `, [
+        schedule.route_id,
+        schedule.bus_id,
+        schedule.departure_time,
+        schedule.arrival_time,
+        dateStr,
+        schedule.price
+      ]);
     }
+  }
+
+  console.log(`✅ Generated schedules for next 30 days`);
+}
 
     await client.query('COMMIT');
     console.log('✅ Tables created + dynamic schedules ready');
