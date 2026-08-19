@@ -88,9 +88,9 @@ const createTables = async () => {
       ON CONFLICT (email) DO NOTHING;
     `, [adminPassword]);
 
-    // ── AUTO GENERATE SCHEDULES (7 DAYS) ─────────────
-    // Copy today's schedules into next 7 days dynamically
-    for (let i = 1; i <= 7; i++) {
+    // ── AUTO GENERATE SCHEDULES (30 DAYS) ─────────────
+    // Copy today's schedules into next 30 days dynamically
+    for (let i = 1; i <= 30; i++) {
       const d = new Date();
       d.setDate(d.getDate() + i);
       const dateStr = d.toISOString().split('T')[0];
